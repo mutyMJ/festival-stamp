@@ -37,7 +37,7 @@ button.small{width:auto;padding:9px 14px;font-size:14px;margin:0}
 button:disabled{opacity:.5}
 .row{display:flex;gap:10px;align-items:center;justify-content:space-between}
 .seg{display:flex;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:3px;margin-top:14px}
-.seg button{margin:0;background:transparent;color:var(--muted);font-size:15px;padding:10px}
+.seg button{margin:0;background:transparent;color:var(--muted);font-size:14px;padding:10px 4px}
 .seg button.on{background:var(--ink);color:var(--paper)}
 .msg{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600}
 .msg.err{background:#e8365d22;color:var(--stamp)} .msg.ok{background:#17a67322;color:var(--ok)}
@@ -250,11 +250,12 @@ function renderAdmin(){
     <div class="row"><h2>관리자</h2><button class="small ghost" id="back">내 카드</button></div>
     <div class="seg"><button data-t="qr" class="${tab==='qr'?'on':''}">QR</button>
       <button data-t="grant" class="${tab==='grant'?'on':''}">직접 부여</button>
-      <button data-t="stat" class="${tab==='stat'?'on':''}">현황·추첨</button></div>
+      <button data-t="stat" class="${tab==='stat'?'on':''}">현황·추첨</button>
+      <button data-t="reset" class="${tab==='reset'?'on':''}">비번 초기화</button></div>
     <div id="pane"></div>`;
   document.getElementById('back').onclick = () => { clearInterval(qrTimer); loadHome(); };
   $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { tab = b.dataset.t; renderAdmin(); });
-  ({ qr: paneQR, grant: paneGrant, stat: paneStat })[tab]();
+  ({ qr: paneQR, grant: paneGrant, stat: paneStat, reset: paneReset })[tab]();
 }
 
 function boothSelect(id){ return `<select id="${id}">${booths.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>`; }
@@ -284,6 +285,21 @@ function paneGrant(){
     const { data, error } = await sb.rpc('admin_grant_stamp', { sid: document.getElementById('gs').value, b: +document.getElementById('gb').value });
     document.getElementById('gmsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>` : `<div class="msg ok">${esc(data)} 학생에게 스탬프를 찍었어요.</div>`;
     if (!error) document.getElementById('gs').value = '';
+  };
+}
+
+function paneReset(){
+  document.getElementById('pane').innerHTML = `<div class="card"><h2 style="font-size:18px">비밀번호 초기화</h2>
+    <p class="muted" style="margin-top:6px">비밀번호를 잊은 학생의 비밀번호를 <b>1234</b>로 바꿔요. 스탬프 기록은 그대로예요.</p>
+    <label for="rs">학생 학번</label><input id="rs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
+    <div id="rmsg"></div><button id="rg">1234로 초기화</button></div>`;
+  document.getElementById('rg').onclick = async () => {
+    const sid = document.getElementById('rs').value.trim();
+    if (!/^\d{5}$/.test(sid)) return document.getElementById('rmsg').innerHTML = '<div class="msg err">학번 5자리를 입력해주세요.</div>';
+    const { data, error } = await sb.rpc('admin_reset_password', { sid });
+    document.getElementById('rmsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
+      : `<div class="msg ok">${esc(data)} 학생의 비밀번호를 1234로 바꿨어요. 로그인 후 바로 변경하도록 안내해주세요.</div>`;
+    if (!error) document.getElementById('rs').value = '';
   };
 }
 
