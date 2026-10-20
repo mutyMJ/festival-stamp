@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>축제 스탬프 랠리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gothic+A1:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{
+  --paper:#f6f4ff; --ink:#1d1b4b; --muted:#6b6a8f; --line:#d9d6f2;
+  --stamp:#e8365d; --gold:#ffc93c; --ok:#17a673; --card:#ffffff;
+  --display:'Do Hyeon','Gothic A1',sans-serif; --body:'Gothic A1',system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --paper:#14123a; --ink:#f1efff; --muted:#a4a2cc; --line:#34316b; --card:#1d1b4b; }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);min-height:100vh}
+main{max-width:480px;margin:0 auto;padding:20px 18px 48px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;letter-spacing:.01em}
+h1{font-size:34px;line-height:1.15}
+h2{font-size:22px}
+p{margin:0}
+.muted{color:var(--muted);font-size:14px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
+input,select{width:100%;font:inherit;font-size:17px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
+input:focus,select:focus,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
+button{font:inherit;font-weight:800;font-size:17px;border:0;border-radius:12px;padding:14px 16px;background:var(--stamp);color:#fff;cursor:pointer;width:100%;margin-top:16px}
+button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+button.small{width:auto;padding:9px 14px;font-size:14px;margin:0}
+button:disabled{opacity:.5}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+.seg{display:flex;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:3px;margin-top:14px}
+.seg button{margin:0;background:transparent;color:var(--muted);font-size:15px;padding:10px}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.msg{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600}
+.msg.err{background:#e8365d22;color:var(--stamp)} .msg.ok{background:#17a67322;color:var(--ok)}
+/* stamp card */
+.ticket{position:relative;background:var(--card);border:2px dashed var(--ink);border-radius:20px;padding:20px 16px 18px;margin-top:18px}
+.ticket::before,.ticket::after{content:"";position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px dashed var(--ink);transform:translateY(-50%)}
+.ticket::before{left:-13px;clip-path:inset(0 0 0 50%)} .ticket::after{right:-13px;clip-path:inset(0 50% 0 0)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.slot{aspect-ratio:1;border-radius:50%;border:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--muted);padding:6px;line-height:1.25}
+.slot.got{border:3px solid var(--stamp);color:var(--stamp);font-family:var(--display);font-size:15px;transform:rotate(-8deg);background:#e8365d12}
+.slot.got b{font-size:26px;line-height:1}
+.slot.pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(1.8) rotate(-30deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.slot.pop{animation:none}}
+.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--gold);transition:width .5s}
+.done{background:var(--gold);color:#1d1b4b;border-radius:16px;padding:16px;margin-top:16px;font-family:var(--display);font-size:22px;text-align:center}
+#qr{display:flex;justify-content:center;padding:16px;background:#fff;border-radius:16px;margin-top:14px}
+#qr img,#qr canvas{max-width:100%;height:auto}
+.code{font-family:ui-monospace,monospace;font-size:30px;font-weight:800;letter-spacing:.12em;text-align:center;margin-top:10px}
+.stat{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px}
+.winner{padding:11px 0;border-bottom:1px solid var(--line);font-size:18px;font-weight:600}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<script>
+/* ====== ★ 여기에 Supabase 값을 넣으세요 (Project Settings > API) ★ ====== */
+const SUPABASE_URL  = 'https://rbxvurozdqfdhtrgesec.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJieHZ1cm96ZHFmZGh0cmdlc2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MzA0NDMsImV4cCI6MjEwODAwNjQ0M30.0165IcndZwY8fEkCLbcSTEvS1Sua6g2n-qK3mefNCBw';
+const FESTIVAL_NAME = '우리학교 축제 스탬프 랠리';   // 제목
+/* ======================================================================== */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const $app = document.getElementById('app');
+const PW_SUFFIX = '#fest';                       // 4자리 비밀번호도 쓸 수 있게 내부에서 덧붙임
+const toEmail = sid => `${sid}@stamp.school`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let me = null, booths = [], myStamps = new Set(), mode = 'login', tab = 'qr', qrTimer = null;
+
+const ERR = {
+  invalid_or_expired:'QR이 만료됐거나 올바르지 않아요. 부스의 최신 QR을 다시 찍어주세요.',
+  forbidden:'관리자만 쓸 수 있어요.', student_not_found:'가입된 학번이 아니에요.',
+  login_required:'먼저 로그인해주세요.'
+};
+const errText = e => { const m = (e && e.message) || ''; for (const k in ERR) if (m.includes(k)) return ERR[k]; return m || '문제가 생겼어요. 잠시 후 다시 시도해주세요.'; };
+
+/* ---------- 시작 ---------- */
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if (!session) return renderLogin();
+  await loadMe();
+  if (!me) { await sb.auth.signOut(); return renderLogin(); }
+  await loadHome();
+  handleClaimHash();
+}
+window.addEventListener('hashchange', () => { if (me) handleClaimHash(); });
+
+async function loadMe(){
+  const { data } = await sb.from('profiles').select('*').maybeSingle();
+  me = data;
+}
+
+/* ---------- 로그인 / 가입 ---------- */
+function renderLogin(msg){
+  const first = mode === 'signup';
+  $app.innerHTML = `
+    <h1>${esc(FESTIVAL_NAME)}</h1>
+    <p class="muted" style="margin-top:8px">부스 5곳에서 스탬프를 모으면 경품 추첨에 참여할 수 있어요.</p>
+    <div class="card">
+      <div class="seg" role="tablist">
+        <button class="${first?'':'on'}" data-m="login">로그인</button>
+        <button class="${first?'on':''}" data-m="signup">처음이에요</button>
+      </div>
+      <label for="sid">학번</label>
+      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="username" placeholder="예: 10101">
+      <label for="nm">이름</label>
+      <input id="nm" autocomplete="name" placeholder="홍길동">
+      <label for="pw">${first?'사용할 비밀번호 (4자리 이상)':'비밀번호'}</label>
+      <input id="pw" type="password" autocomplete="${first?'new-password':'current-password'}" placeholder="${first?'잊지 않을 비밀번호':'비밀번호'}">
+      ${first?`<label for="pw2">비밀번호 확인</label><input id="pw2" type="password" autocomplete="new-password">`:''}
+      <div id="msg">${msg?`<div class="msg err">${esc(msg)}</div>`:''}</div>
+      <button id="go">${first?'비밀번호 설정하고 시작':'로그인'}</button>
+    </div>
+    <p class="muted" style="margin-top:14px">비밀번호를 잊었다면 학생회 부스에서 초기화해드려요.</p>`;
+  $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.m; renderLogin(); });
+  document.getElementById('go').onclick = submitLogin;
+  $app.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => e.key==='Enter' && submitLogin()));
+}
+
+async function submitLogin(){
+  const sid = document.getElementById('sid').value.trim();
+  const nm  = document.getElementById('nm').value.trim();
+  const pw  = document.getElementById('pw').value;
+  const say = t => document.getElementById('msg').innerHTML = `<div class="msg err">${esc(t)}</div>`;
+  if (!/^\d{5}$/.test(sid)) return say('학번은 숫자 5자리로 입력해주세요. (예: 10101)');
+  if (!nm) return say('이름을 입력해주세요.');
+  if (pw.length < 4) return say('비밀번호는 4자리 이상이어야 해요.');
+  const btn = document.getElementById('go'); btn.disabled = true;
+
+  if (mode === 'signup') {
+    if (pw !== document.getElementById('pw2').value) { btn.disabled=false; return say('비밀번호 확인이 달라요.'); }
+    const { error } = await sb.auth.signUp({ email: toEmail(sid), password: pw + PW_SUFFIX,
+      options:{ data:{ student_id: sid, name: nm } } });
+    if (error) { btn.disabled=false; return say(/already|registered/i.test(error.message) ? '이미 가입된 학번이에요. "로그인"을 눌러주세요.' : error.message); }
+  }
+  const { error } = await sb.auth.signInWithPassword({ email: toEmail(sid), password: pw + PW_SUFFIX });
+  if (error) { btn.disabled=false; return say('학번 또는 비밀번호가 맞지 않아요.'); }
+
+  await loadMe();
+  if (!me || me.name.replace(/\s/g,'') !== nm.replace(/\s/g,'')) {       // 이름 대조
+    await sb.auth.signOut(); me = null; btn.disabled=false;
+    return say('학번과 이름이 일치하지 않아요.');
+  }
+  await loadHome(); handleClaimHash();
+}
+
+/* ---------- 학생 홈 ---------- */
+async function loadHome(justGot){
+  const [b, s] = await Promise.all([ sb.rpc('list_booths'), sb.from('stamps').select('booth_id') ]);
+  booths = b.data || [];
+  myStamps = new Set((s.data||[]).map(r => r.booth_id));
+  renderHome(justGot);
+}
+
+function renderHome(justGot){
+  const total = booths.length, got = myStamps.size, full = got >= total && total > 0;
+  $app.innerHTML = `
+    <div class="row"><div><h2>${esc(me.name)}</h2><p class="muted">${esc(me.student_id)}</p></div>
+      <div style="display:flex;gap:8px">
+        ${me.is_admin?'<button class="small ghost" id="toAdmin">관리자</button>':''}
+        <button class="small ghost" id="out">로그아웃</button></div></div>
+    <div class="ticket">
+      <div class="row"><h2>스탬프 카드</h2><b>${got} / ${total}</b></div>
+      <div class="bar"><i style="width:${total?got/total*100:0}%"></i></div>
+      <div class="grid">${booths.map(b => {
+        const has = myStamps.has(b.id);
+        return `<div class="slot ${has?'got':''} ${justGot===b.id?'pop':''}">${has?`<b>✓</b>${esc(b.name)}`:esc(b.name)}</div>`; }).join('')}</div>
+    </div>
+    ${full ? `<div class="done">🎉 추첨 응모 완료!<br><span style="font-family:var(--body);font-size:14px;font-weight:600">경품 추첨 시간에 이 화면을 보여주세요</span></div>`
+          : `<p class="muted" style="margin-top:16px">부스에 있는 QR을 휴대폰 카메라로 찍으면 스탬프가 찍혀요.</p>`}
+    <div class="card"><h2 style="font-size:18px">QR이 안 찍힐 때</h2>
+      <label for="cb">부스</label>
+      <select id="cb">${booths.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>
+      <label for="cc">부스에 표시된 8자리 코드</label>
+      <input id="cc" autocapitalize="off" autocomplete="off" maxlength="8" placeholder="예: 3fa91c0b">
+      <div id="cmsg"></div>
+      <button id="cgo" class="ghost">코드로 스탬프 받기</button></div>`;
+  document.getElementById('out').onclick = logout;
+  if (me.is_admin) document.getElementById('toAdmin').onclick = renderAdmin;
+  document.getElementById('cgo').onclick = async () => {
+    const r = await claim(+document.getElementById('cb').value, document.getElementById('cc').value.trim().toLowerCase());
+    if (r) document.getElementById('cmsg').innerHTML = `<div class="msg err">${esc(r)}</div>`;
+  };
+}
+
+async function claim(b, t){
+  const { error } = await sb.rpc('claim_stamp', { b, t });
+  if (error) return errText(error);
+  await loadHome(b);
+  return null;
+}
+
+async function handleClaimHash(){
+  const m = location.hash.match(/^#claim=(\d+)\.([0-9a-f]+)$/i);
+  if (!m) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  const b = +m[1], had = myStamps.has(b);
+  const err = await claim(b, m[2].toLowerCase());
+  if (err) { alert(err); return; }
+  if (had) alert('이미 받은 스탬프예요.');
+}
+
+async function logout(){ await sb.auth.signOut(); me = null; mode='login'; renderLogin(); }
+
+/* ---------- 관리자 ---------- */
+function renderAdmin(){
+  clearInterval(qrTimer);
+  $app.innerHTML = `
+    <div class="row"><h2>관리자</h2><button class="small ghost" id="back">내 카드</button></div>
+    <div class="seg"><button data-t="qr" class="${tab==='qr'?'on':''}">QR</button>
+      <button data-t="grant" class="${tab==='grant'?'on':''}">직접 부여</button>
+      <button data-t="stat" class="${tab==='stat'?'on':''}">현황·추첨</button></div>
+    <div id="pane"></div>`;
+  document.getElementById('back').onclick = () => { clearInterval(qrTimer); loadHome(); };
+  $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { tab = b.dataset.t; renderAdmin(); });
+  ({ qr: paneQR, grant: paneGrant, stat: paneStat })[tab]();
+}
+
+function boothSelect(id){ return `<select id="${id}">${booths.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>`; }
+
+function paneQR(){
+  document.getElementById('pane').innerHTML = `<div class="card"><label for="ab">우리 부스</label>${boothSelect('ab')}
+    <div id="qr"></div><div class="code" id="acode">--------</div>
+    <p class="muted" style="text-align:center;margin-top:8px">QR은 1분마다 자동으로 바뀌어요. 이 화면을 학생에게 보여주세요.</p></div>`;
+  const draw = async () => {
+    const b = +document.getElementById('ab').value;
+    const { data, error } = await sb.rpc('get_booth_token', { b });
+    if (error) return document.getElementById('acode').textContent = '오류';
+    const url = `${location.origin}${location.pathname}#claim=${b}.${data}`;
+    const box = document.getElementById('qr'); box.innerHTML = '';
+    new QRCode(box, { text: url, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M });
+    document.getElementById('acode').textContent = data;
+  };
+  document.getElementById('ab').onchange = draw;
+  draw(); qrTimer = setInterval(() => { if (document.getElementById('qr')) draw(); else clearInterval(qrTimer); }, 20000);
+}
+
+function paneGrant(){
+  document.getElementById('pane').innerHTML = `<div class="card"><label for="gb">부스</label>${boothSelect('gb')}
+    <label for="gs">학생 학번</label><input id="gs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
+    <div id="gmsg"></div><button id="gg">스탬프 찍어주기</button></div>`;
+  document.getElementById('gg').onclick = async () => {
+    const { data, error } = await sb.rpc('admin_grant_stamp', { sid: document.getElementById('gs').value, b: +document.getElementById('gb').value });
+    document.getElementById('gmsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>` : `<div class="msg ok">${esc(data)} 학생에게 스탬프를 찍었어요.</div>`;
+    if (!error) document.getElementById('gs').value = '';
+  };
+}
+
+async function paneStat(){
+  const pane = document.getElementById('pane');
+  pane.innerHTML = '<div class="card muted">불러오는 중…</div>';
+  const { data, error } = await sb.rpc('admin_stats');
+  if (error) return pane.innerHTML = `<div class="msg err">${esc(errText(error))}</div>`;
+  pane.innerHTML = `<div class="card"><div class="stat"><span>가입 학생</span><b>${data.students}명</b></div>
+    ${data.booths.map(b=>`<div class="stat"><span>${esc(b.name)}</span><b>${b.count}명</b></div>`).join('')}
+    <div class="stat"><span>응모 자격 (전부 완료)</span><b>${data.completed}명</b></div>
+    <button class="ghost" id="rf">새로고침</button></div>
+    <div class="card"><h2 style="font-size:18px">경품 추첨</h2>
+    <label for="dn">뽑을 인원</label><input id="dn" type="number" min="1" value="1">
+    <button id="dg">추첨하기</button><div id="dr"></div></div>`;
+  document.getElementById('rf').onclick = paneStat;
+  document.getElementById('dg').onclick = async () => {
+    const { data: w, error: e } = await sb.rpc('admin_draw', { n: +document.getElementById('dn').value });
+    document.getElementById('dr').innerHTML = e ? `<div class="msg err">${esc(errText(e))}</div>`
+      : (w.length ? w.map(x=>`<div class="winner">${esc(x.student_id)} · ${esc(x.name)}</div>`).join('') : '<div class="msg err">응모 자격자가 없어요.</div>');
+  };
+}
+
+boot();
+</script>
+</body>
+</html>
