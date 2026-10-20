@@ -251,7 +251,7 @@ function renderAdmin(){
     <div class="seg"><button data-t="qr" class="${tab==='qr'?'on':''}">QR</button>
       <button data-t="grant" class="${tab==='grant'?'on':''}">직접 부여</button>
       <button data-t="stat" class="${tab==='stat'?'on':''}">현황·추첨</button>
-      <button data-t="reset" class="${tab==='reset'?'on':''}">비번 초기화</button></div>
+      <button data-t="reset" class="${tab==='reset'?'on':''}">초기화</button></div>
     <div id="pane"></div>`;
   document.getElementById('back').onclick = () => { clearInterval(qrTimer); loadHome(); };
   $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { tab = b.dataset.t; renderAdmin(); });
@@ -289,10 +289,25 @@ function paneGrant(){
 }
 
 function paneReset(){
-  document.getElementById('pane').innerHTML = `<div class="card"><h2 style="font-size:18px">비밀번호 초기화</h2>
-    <p class="muted" style="margin-top:6px">비밀번호를 잊은 학생의 비밀번호를 <b>1234</b>로 바꿔요. 스탬프 기록은 그대로예요.</p>
-    <label for="rs">학생 학번</label><input id="rs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
-    <div id="rmsg"></div><button id="rg">1234로 초기화</button></div>`;
+  const pane = document.getElementById('pane');
+  pane.innerHTML = `
+    <div class="card"><h2 style="font-size:18px">비밀번호 초기화</h2>
+      <p class="muted" style="margin-top:6px">비밀번호를 잊은 학생의 비밀번호를 <b>1234</b>로 바꿔요. 스탬프 기록은 그대로예요.</p>
+      <label for="rs">학생 학번</label><input id="rs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
+      <div id="rmsg"></div><button id="rg">1234로 초기화</button></div>
+
+    <div class="card"><h2 style="font-size:18px">학생 스탬프 취소</h2>
+      <p class="muted" style="margin-top:6px">잘못 찍힌 스탬프를 한 학생 단위로 지워요.</p>
+      <label for="cs">학생 학번</label><input id="cs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
+      <label for="cb2">지울 스탬프</label>
+      <select id="cb2"><option value="">전부 지우기</option>${booths.map(b=>`<option value="${b.id}">${esc(b.name)}만</option>`).join('')}</select>
+      <div id="smsg"></div><button id="sg" class="ghost">스탬프 지우기</button></div>
+
+    <div class="card"><h2 style="font-size:18px">전체 스탬프 초기화</h2>
+      <p class="muted" style="margin-top:6px">모든 학생의 스탬프를 지워요. <b>되돌릴 수 없어요.</b> 행사 전 리허설 기록을 지울 때만 쓰세요. 학생 계정은 남아요.</p>
+      <label for="ac">확인을 위해 <b>전체초기화</b>라고 입력</label><input id="ac" autocomplete="off">
+      <div id="amsg"></div><button id="ag">전체 스탬프 지우기</button></div>`;
+
   document.getElementById('rg').onclick = async () => {
     const sid = document.getElementById('rs').value.trim();
     if (!/^\d{5}$/.test(sid)) return document.getElementById('rmsg').innerHTML = '<div class="msg err">학번 5자리를 입력해주세요.</div>';
@@ -300,6 +315,27 @@ function paneReset(){
     document.getElementById('rmsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
       : `<div class="msg ok">${esc(data)} 학생의 비밀번호를 1234로 바꿨어요. 로그인 후 바로 변경하도록 안내해주세요.</div>`;
     if (!error) document.getElementById('rs').value = '';
+  };
+
+  document.getElementById('sg').onclick = async () => {
+    const sid = document.getElementById('cs').value.trim();
+    const bv = document.getElementById('cb2').value;
+    if (!/^\d{5}$/.test(sid)) return document.getElementById('smsg').innerHTML = '<div class="msg err">학번 5자리를 입력해주세요.</div>';
+    if (!confirm(sid + ' 학생의 스탬프를 ' + (bv ? '해당 부스 것만' : '전부') + ' 지울까요?')) return;
+    const { data, error } = await sb.rpc('admin_clear_stamps', { sid, b: bv ? +bv : null });
+    document.getElementById('smsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
+      : `<div class="msg ok">${esc(data)} 학생의 스탬프를 지웠어요.</div>`;
+    if (!error) document.getElementById('cs').value = '';
+  };
+
+  document.getElementById('ag').onclick = async () => {
+    if (document.getElementById('ac').value.trim() !== '전체초기화')
+      return document.getElementById('amsg').innerHTML = '<div class="msg err">확인 칸에 전체초기화 라고 입력해주세요.</div>';
+    if (!confirm('정말 모든 학생의 스탬프를 지울까요? 되돌릴 수 없어요.')) return;
+    const { data, error } = await sb.rpc('admin_clear_all_stamps');
+    document.getElementById('amsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
+      : `<div class="msg ok">스탬프 ${data}개를 모두 지웠어요.</div>`;
+    if (!error) document.getElementById('ac').value = '';
   };
 }
 
