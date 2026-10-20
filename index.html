@@ -188,13 +188,40 @@ function renderHome(justGot){
       <label for="cc">부스에 표시된 8자리 코드</label>
       <input id="cc" autocapitalize="off" autocomplete="off" maxlength="8" placeholder="예: 3fa91c0b">
       <div id="cmsg"></div>
-      <button id="cgo" class="ghost">코드로 스탬프 받기</button></div>`;
+      <button id="cgo" class="ghost">코드로 스탬프 받기</button></div>
+    <div class="card"><h2 style="font-size:18px">비밀번호 바꾸기</h2>
+      <label for="op">현재 비밀번호</label>
+      <input id="op" type="password" autocomplete="current-password">
+      <label for="np">새 비밀번호 (4자리 이상)</label>
+      <input id="np" type="password" autocomplete="new-password">
+      <label for="np2">새 비밀번호 확인</label>
+      <input id="np2" type="password" autocomplete="new-password">
+      <div id="pmsg"></div>
+      <button id="pgo" class="ghost">비밀번호 변경</button></div>`;
   document.getElementById('out').onclick = logout;
   if (me.is_admin) document.getElementById('toAdmin').onclick = renderAdmin;
+  document.getElementById('pgo').onclick = changePassword;
   document.getElementById('cgo').onclick = async () => {
     const r = await claim(+document.getElementById('cb').value, document.getElementById('cc').value.trim().toLowerCase());
     if (r) document.getElementById('cmsg').innerHTML = `<div class="msg err">${esc(r)}</div>`;
   };
+}
+
+async function changePassword(){
+  const say = (t, ok) => document.getElementById('pmsg').innerHTML = `<div class="msg ${ok?'ok':'err'}">${esc(t)}</div>`;
+  const op = document.getElementById('op').value;
+  const np = document.getElementById('np').value;
+  if (!op) return say('현재 비밀번호를 입력해주세요.');
+  if (np.length < 4) return say('새 비밀번호는 4자리 이상이어야 해요.');
+  if (np !== document.getElementById('np2').value) return say('새 비밀번호 확인이 달라요.');
+  const btn = document.getElementById('pgo'); btn.disabled = true;
+  const chk = await sb.auth.signInWithPassword({ email: toEmail(me.student_id), password: op + PW_SUFFIX });
+  if (chk.error) { btn.disabled = false; return say('현재 비밀번호가 맞지 않아요.'); }
+  const { error } = await sb.auth.updateUser({ password: np + PW_SUFFIX });
+  btn.disabled = false;
+  if (error) return say('변경하지 못했어요. 잠시 후 다시 시도해주세요.');
+  ['op','np','np2'].forEach(id => document.getElementById(id).value = '');
+  say('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요.', true);
 }
 
 async function claim(b, t){
