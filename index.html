@@ -3,361 +3,730 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>축제 스탬프 랠리</title>
+<meta name="theme-color" content="#0b2152">
+<title>남부고 청원제 스탬프 랠리</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Gothic+A1:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gothic+A1:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 :root{
-  --paper:#f6f4ff; --ink:#1d1b4b; --muted:#6b6a8f; --line:#d9d6f2;
-  --stamp:#e8365d; --gold:#ffc93c; --ok:#17a673; --card:#ffffff;
-  --display:'Do Hyeon','Gothic A1',sans-serif; --body:'Gothic A1',system-ui,sans-serif;
-}
-@media (prefers-color-scheme:dark){
-  :root{ --paper:#14123a; --ink:#f1efff; --muted:#a4a2cc; --line:#34316b; --card:#1d1b4b; }
+  --ink:#eef8ff; --muted:#a9c8e8; --line:rgba(190,230,255,.38);
+  --ice:#7fd3ff; --ice2:#bfeaff; --violet:#8f9bff; --navy:#071a45;
+  --card:rgba(12,36,92,.62); --ok:#79f0c0; --err:#ff9db3;
+  --display:'Gowun Batang','Noto Serif KR',serif; --body:'Gothic A1',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);-webkit-text-size-adjust:100%}
-body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);min-height:100vh}
-main{max-width:480px;margin:0 auto;padding:20px 18px 48px}
-h1,h2{font-family:var(--display);font-weight:400;margin:0;letter-spacing:.01em}
-h1{font-size:34px;line-height:1.15}
-h2{font-size:22px}
+html,body{margin:0;color:var(--ink);font-family:var(--body);-webkit-text-size-adjust:100%;background:#071538}
+body{min-height:100vh;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+
+/* ---------- 겨울 하늘 배경 ---------- */
+.sky{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(60% 38% at 18% 8%,rgba(120,255,225,.30),transparent 70%),
+    radial-gradient(55% 34% at 85% 2%,rgba(160,135,255,.34),transparent 70%),
+    linear-gradient(180deg,#071538 0%,#0e2c6c 52%,#2a6cae 100%);
+  animation:aurora 16s ease-in-out infinite alternate}
+@keyframes aurora{to{background-position:0 0,-30px 10px,0 0;filter:hue-rotate(18deg)}}
+.hills{position:fixed;left:0;right:0;bottom:0;height:20vh;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(120% 100% at 15% 100%,rgba(232,247,255,.55) 0 46%,transparent 47%),
+    radial-gradient(120% 100% at 88% 100%,rgba(196,230,255,.45) 0 42%,transparent 43%)}
+.flake{position:fixed;top:-14px;border-radius:50%;background:#fff;pointer-events:none;z-index:0;animation:fall linear infinite}
+@keyframes fall{to{transform:translate3d(var(--dx,30px),112vh,0)}}
+@media (prefers-reduced-motion:reduce){.flake{display:none}.sky{animation:none}.slot.pop{animation:none!important}}
+
+main{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:22px 16px 60px}
+h1,h2{font-family:var(--display);font-weight:700;margin:0}
+h1{font-size:34px;line-height:1.22;text-align:center;letter-spacing:.01em;
+  background:linear-gradient(180deg,#fff 10%,#a9e4ff 90%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 12px rgba(127,211,255,.55))}
+h2{font-size:21px}
 p{margin:0}
-.muted{color:var(--muted);font-size:14px}
-.card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;margin-top:16px}
-label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px}
-input,select{width:100%;font:inherit;font-size:17px;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);color:var(--ink)}
-input:focus,select:focus,button:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
-button{font:inherit;font-weight:800;font-size:17px;border:0;border-radius:12px;padding:14px 16px;background:var(--stamp);color:#fff;cursor:pointer;width:100%;margin-top:16px}
-button.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.muted{color:var(--muted);font-size:14px;line-height:1.5}
+.crest{display:block;margin:6px auto 4px;width:64px;height:64px;color:var(--ice2);filter:drop-shadow(0 0 10px rgba(127,211,255,.8))}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin-top:16px;
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 8px 30px rgba(3,12,40,.35),inset 0 1px 0 rgba(255,255,255,.18)}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:var(--ice2)}
+input,select{width:100%;font:inherit;font-size:17px;padding:13px 14px;border-radius:12px;border:1.5px solid transparent;background:#f2fbff;color:#0b2152}
+input::placeholder{color:#7d93b8}
+input:focus,select:focus,button:focus-visible,a:focus-visible{outline:3px solid #ffe38a;outline-offset:2px}
+button{font:inherit;font-weight:800;font-size:17px;border:0;border-radius:12px;padding:14px 16px;cursor:pointer;width:100%;margin-top:16px;
+  background:linear-gradient(135deg,#9be3ff,#8f9bff);color:var(--navy);box-shadow:0 4px 16px rgba(127,211,255,.35)}
+button.ghost{background:rgba(255,255,255,.1);color:var(--ink);border:1px solid var(--line);box-shadow:none}
+button.danger{background:linear-gradient(135deg,#ffb3c4,#ff8aa5);color:#3a0618}
 button.small{width:auto;padding:9px 14px;font-size:14px;margin:0}
-button:disabled{opacity:.5}
+button:disabled{opacity:.5;cursor:default}
 .row{display:flex;gap:10px;align-items:center;justify-content:space-between}
-.seg{display:flex;background:var(--paper);border:1.5px solid var(--line);border-radius:12px;padding:3px;margin-top:14px}
-.seg button{margin:0;background:transparent;color:var(--muted);font-size:14px;padding:10px 4px}
-.seg button.on{background:var(--ink);color:var(--paper)}
-.msg{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600}
-.msg.err{background:#e8365d22;color:var(--stamp)} .msg.ok{background:#17a67322;color:var(--ok)}
-/* stamp card */
-.ticket{position:relative;background:var(--card);border:2px dashed var(--ink);border-radius:20px;padding:20px 16px 18px;margin-top:18px}
-.ticket::before,.ticket::after{content:"";position:absolute;top:50%;width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px dashed var(--ink);transform:translateY(-50%)}
-.ticket::before{left:-13px;clip-path:inset(0 0 0 50%)} .ticket::after{right:-13px;clip-path:inset(0 50% 0 0)}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
-.slot{aspect-ratio:1;border-radius:50%;border:2px dashed var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--muted);padding:6px;line-height:1.25}
-.slot.got{border:3px solid var(--stamp);color:var(--stamp);font-family:var(--display);font-size:15px;transform:rotate(-8deg);background:#e8365d12}
-.slot.got b{font-size:26px;line-height:1}
-.slot.pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
-@keyframes pop{from{transform:scale(1.8) rotate(-30deg);opacity:0}}
-@media (prefers-reduced-motion:reduce){.slot.pop{animation:none}}
-.bar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:10px}
-.bar i{display:block;height:100%;background:var(--gold);transition:width .5s}
-.done{background:var(--gold);color:#1d1b4b;border-radius:16px;padding:16px;margin-top:16px;font-family:var(--display);font-size:22px;text-align:center}
-#qr{display:flex;justify-content:center;padding:16px;background:#fff;border-radius:16px;margin-top:14px}
+.actions{display:flex;gap:8px}
+.seg{display:flex;gap:3px;background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:14px;padding:3px;margin-top:14px}
+.seg button{margin:0;background:transparent;color:var(--muted);font-size:14px;padding:10px 4px;box-shadow:none}
+.seg button.on{background:linear-gradient(135deg,#9be3ff,#8f9bff);color:var(--navy)}
+.msg{margin-top:14px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600;line-height:1.5;white-space:pre-line}
+.msg.err{background:rgba(255,120,150,.16);color:var(--err);border:1px solid rgba(255,157,179,.4)}
+.msg.ok{background:rgba(121,240,192,.14);color:var(--ok);border:1px solid rgba(121,240,192,.4)}
+.msg.info{background:rgba(127,211,255,.14);color:var(--ice2);border:1px solid var(--line)}
+.chk{display:flex;gap:8px;align-items:center;margin:12px 0 0;font-weight:400;color:var(--muted)}
+.chk input{width:18px;height:18px;margin:0}
+
+/* ---------- 스탬프 카드 ---------- */
+.ticket{margin-top:18px;padding:20px 14px 20px;border-radius:24px;border:1px solid var(--line);
+  background:linear-gradient(160deg,rgba(255,255,255,.2),rgba(255,255,255,.06));
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 10px 36px rgba(3,12,40,.4),inset 0 1px 0 rgba(255,255,255,.3)}
+.bar{height:10px;border-radius:99px;background:rgba(255,255,255,.18);overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#9be3ff,#fff);transition:width .6s}
+.slots{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:18px}
+.slot{width:calc(33.33% - 8px);aspect-ratio:1;border-radius:50%;border:2px dashed rgba(190,230,255,.55);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;font-size:12px;line-height:1.25;padding:8px;color:var(--muted);word-break:keep-all}
+.slot svg{width:34px;height:34px;opacity:.5;margin-bottom:3px}
+.slot.got{border:2px solid #fff;color:var(--navy);font-weight:800;background:radial-gradient(circle,#f4fcff,#8edaff 75%);
+  box-shadow:0 0 22px rgba(160,230,255,.85)}
+.slot.got svg{opacity:1}
+.slot.pop{animation:pop .7s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(1.9) rotate(-40deg);opacity:0}}
+.done{margin-top:16px;padding:16px;border-radius:18px;text-align:center;font-family:var(--display);font-size:22px;font-weight:700;color:var(--navy);
+  background:linear-gradient(135deg,#fff,#a9e4ff);box-shadow:0 0 28px rgba(190,235,255,.7)}
+.done small{display:block;font-family:var(--body);font-size:14px;font-weight:600;margin-top:4px}
+
+#qr{display:flex;justify-content:center;padding:16px;background:#fff;border-radius:16px;margin-top:14px;min-height:60px}
 #qr img,#qr canvas{max-width:100%;height:auto}
-.code{font-family:ui-monospace,monospace;font-size:30px;font-weight:800;letter-spacing:.12em;text-align:center;margin-top:10px}
-.stat{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:16px}
-.winner{padding:11px 0;border-bottom:1px solid var(--line);font-size:18px;font-weight:600}
+.code{font-family:ui-monospace,monospace;font-size:32px;font-weight:800;letter-spacing:.14em;text-align:center;margin-top:12px;color:#fff}
+.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(190,230,255,.2);font-size:16px}
+.winner{padding:12px 0;border-bottom:1px solid rgba(190,230,255,.2);font-size:20px;font-weight:700}
+.badge{display:inline-block;font-size:12px;font-weight:800;padding:3px 8px;border-radius:99px;background:#ffe38a;color:#4a3300;margin-left:6px;vertical-align:middle}
+.who{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(190,230,255,.2);gap:8px}
+
+/* ---------- 알림/대화상자 ---------- */
+#toast{position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top));z-index:50;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;max-width:92%;padding:12px 16px;border-radius:14px;font-weight:700;font-size:15px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.35);
+  background:#f2fbff;color:var(--navy);animation:tin .25s}
+.toast.err{background:#ffd3dc;color:#5a0a22}.toast.ok{background:#c9fbe6;color:#04402a}
+@keyframes tin{from{transform:translateY(-12px);opacity:0}}
+#net{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#ffd3dc;color:#5a0a22;text-align:center;font-weight:800;padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:none}
+.scrim{position:fixed;inset:0;z-index:70;background:rgba(3,10,35,.7);display:flex;align-items:center;justify-content:center;padding:20px}
+.dlg{width:100%;max-width:380px;border-radius:22px;padding:22px;background:#0f2a6b;border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.dlg p{margin-top:10px;white-space:pre-line;line-height:1.55;color:var(--ink)}
+.dbtn{display:flex;gap:10px}.dbtn button{margin-top:18px}
+.scan{flex-direction:column;gap:14px}
+.scanbox{position:relative;width:min(92vw,420px);aspect-ratio:3/4;max-height:68vh;border-radius:22px;overflow:hidden;background:#000;border:1px solid var(--line)}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scanbox .frame{position:absolute;inset:18%;border:3px solid #fff;border-radius:20px;box-shadow:0 0 0 999px rgba(3,10,35,.5),0 0 18px rgba(160,230,255,.9)}
+.scanhint{color:#fff;font-weight:700;text-align:center;max-width:92vw;line-height:1.5;white-space:pre-line}
+.scan button{width:min(92vw,420px);margin-top:0}
 .hide{display:none!important}
 </style>
 </head>
 <body>
+<div class="sky"></div><div class="hills"></div><div id="snow" aria-hidden="true"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="sf" viewBox="-50 -50 100 100">
+  <g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round">
+    <g id="arm"><path d="M0 0V-44M0 -28L-11 -39M0 -28L11 -39M0 -15L-8 -23M0 -15L8 -23"/></g>
+    <use href="#arm" transform="rotate(60)"/><use href="#arm" transform="rotate(120)"/>
+    <use href="#arm" transform="rotate(180)"/><use href="#arm" transform="rotate(240)"/><use href="#arm" transform="rotate(300)"/>
+  </g></symbol></svg>
 <main id="app"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="net">인터넷 연결이 끊겼어요. 연결되면 자동으로 이어져요.</div>
+<div id="modal"></div>
 
 <script>
-/* ====== ★ 여기에 Supabase 값을 넣으세요 (Project Settings > API) ★ ====== */
+/* ======================= 설정 ======================= */
 const SUPABASE_URL  = 'https://rbxvurozdqfdhtrgesec.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJieHZ1cm96ZHFmZGh0cmdlc2VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MzA0NDMsImV4cCI6MjEwODAwNjQ0M30.0165IcndZwY8fEkCLbcSTEvS1Sua6g2n-qK3mefNCBw';
-const FESTIVAL_NAME = '우리학교 축제 스탬프 랠리';   // 제목
-/* ======================================================================== */
+const TITLE = '남부고 청원제 스탬프 랠리';
+const BOOTH_TEXT = '5곳';
+const TEMP_PW = '1234';            // 관리자 비밀번호 초기화 시 임시 비밀번호 (schema_full.sql 과 동일해야 함)
+/* ==================================================== */
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-const $app = document.getElementById('app');
-const PW_SUFFIX = '#fest';                       // 4자리 비밀번호도 쓸 수 있게 내부에서 덧붙임
+const PW_SUFFIX = '#fest';
 const toEmail = sid => `${sid}@stamp.school`;
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const SF = '<svg viewBox="-50 -50 100 100" aria-hidden="true"><use href="#sf"/></svg>';
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const ssGet = k => { try { return sessionStorage.getItem(k); } catch { return null; } };
+const ssSet = (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch {} };
 
-let me = null, booths = [], myStamps = new Set(), mode = 'login', tab = 'qr', qrTimer = null;
+let sb, me = null, booths = [], myStamps = new Set();
+let mode = 'login', tab = 'qr', view = 'login', qrTimer = null, wake = null, loggingOut = false, busy = false, claiming = false;
 
-const ERR = {
-  invalid_or_expired:'QR이 만료됐거나 올바르지 않아요. 부스의 최신 QR을 다시 찍어주세요.',
-  forbidden:'관리자만 쓸 수 있어요.', student_not_found:'가입된 학번이 아니에요.',
-  login_required:'먼저 로그인해주세요.'
-};
-const errText = e => { const m = (e && e.message) || ''; for (const k in ERR) if (m.includes(k)) return ERR[k]; return m || '문제가 생겼어요. 잠시 후 다시 시도해주세요.'; };
+/* ---------- 눈 내리는 배경 ---------- */
+(function snow(){
+  const w = document.getElementById('snow');
+  for (let i = 0; i < 26; i++) {
+    const f = document.createElement('i'), r = Math.random(), s = 3 + r * 6;
+    f.className = 'flake';
+    f.style.cssText = `left:${Math.random()*100}%;width:${s}px;height:${s}px;opacity:${.35+Math.random()*.55};--dx:${(Math.random()-.5)*90}px;animation-duration:${9+Math.random()*12}s;animation-delay:${-Math.random()*20}s`;
+    w.appendChild(f);
+  }
+})();
+
+/* ---------- 알림 · 대화상자 ---------- */
+function toast(msg, type = 'info', ms = 4500){
+  const el = document.createElement('div'); el.className = 'toast ' + type; el.textContent = msg;
+  document.getElementById('toast').appendChild(el); setTimeout(() => el.remove(), ms);
+}
+function dialog({ title, body = '', ok = '확인', cancel = null, danger = false }){
+  return new Promise(res => {
+    const w = document.getElementById('modal');
+    w.innerHTML = `<div class="scrim"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt">
+      <h2 id="dt">${esc(title)}</h2>${body ? `<p>${esc(body)}</p>` : ''}
+      <div class="dbtn">${cancel ? `<button class="ghost" id="dc">${esc(cancel)}</button>` : ''}<button id="dok" class="${danger ? 'danger' : ''}">${esc(ok)}</button></div></div></div>`;
+    const done = v => { w.innerHTML = ''; res(v); };
+    document.getElementById('dok').onclick = () => done(true);
+    if (cancel) document.getElementById('dc').onclick = () => done(false);
+    document.getElementById('dok').focus();
+  });
+}
+const msgBox = (id, text, type = 'err') => { const el = document.getElementById(id); if (el) el.innerHTML = text ? `<div class="msg ${type}">${esc(text)}</div>` : ''; };
+
+/* ---------- 네트워크 · 오류 처리 ---------- */
+const NET_RE = /failed to fetch|networkerror|load failed|timeout|network request|err_internet/i;
+const timeoutP = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+
+async function call(fn, { retries = 2 } = {}){
+  let refreshed = false;
+  for (let i = 0; ; i++) {
+    let r;
+    try { r = await timeoutP(Promise.resolve(fn()), 15000); } catch (e) { r = { data: null, error: e }; }
+    const err = r && r.error;
+    if (!err) return r;
+    const m = String(err.message || err);
+    if (NET_RE.test(m) && i < retries) { await sleep(700 * (i + 1)); continue; }
+    if (/jwt|not authenticated|login_required/i.test(m) && !refreshed) {
+      refreshed = true;
+      const x = await sb.auth.refreshSession().catch(e => ({ error: e }));
+      if (!x.error) continue;
+    }
+    return r;
+  }
+}
+const rpc = (n, a) => call(() => sb.rpc(n, a));
+
+function friendly(e){
+  const m = String((e && e.message) || e || '');
+  const map = [
+    [NET_RE, '인터넷 연결이 불안정해요. 연결을 확인하고 다시 시도해주세요.'],
+    [/invalid_or_expired/, 'QR(코드)이 만료됐거나 올바르지 않아요.\n부스에 표시된 최신 QR을 다시 찍거나, 아래 "코드로 스탬프 받기"에 8자리 코드를 입력해주세요.'],
+    [/invalid_booth/, '존재하지 않는 부스예요.'],
+    [/student_not_found/, '가입된 학번이 아니에요. 학번을 다시 확인해주세요.'],
+    [/cannot_change_super/, '최고 관리자의 권한은 바꿀 수 없어요.'],
+    [/cannot_delete_admin/, '관리자 계정은 삭제할 수 없어요. 먼저 관리자 권한을 해제해주세요.'],
+    [/name_required/, '이름을 입력해주세요.'],
+    [/forbidden/, '이 기능을 쓸 권한이 없어요.'],
+    [/over_request_rate_limit|rate limit|too many|429/i, '지금 접속이 몰려서 잠시 막혔어요. 1~2분 뒤에 다시 시도해주세요.\n(학교 와이파이보다 휴대폰 데이터가 더 잘 될 수 있어요)'],
+    [/invalid login credentials/i, '학번 또는 비밀번호가 맞지 않아요.\n처음이라면 "처음이에요" 탭에서 가입해주세요. 비밀번호를 잊었다면 학생회 부스에서 초기화해드려요.'],
+    [/already registered|already been registered/i, '이미 가입된 학번이에요. "로그인" 탭에서 로그인해주세요.'],
+    [/email not confirmed/i, '서비스 설정 문제예요. 학생회에 알려주세요. (이메일 확인 설정이 켜져 있음)'],
+    [/signups? (not allowed|are disabled)|signup.*disabled/i, '지금은 가입을 받지 않고 있어요. 학생회에 문의해주세요.'],
+    [/database error saving new user|invalid_student_id/i, '가입하지 못했어요. 학번(숫자 5자리)과 이름을 다시 확인해주세요.\n이미 가입한 적이 있다면 "로그인"을 눌러주세요.'],
+    [/jwt|not authenticated|login_required|refresh_token|session/i, '로그인이 만료됐어요. 다시 로그인해주세요.'],
+  ];
+  for (const [re, t] of map) if (re.test(m)) return t;
+  if (e && e.__ui) return m;                       // 화면에서 직접 만든 안내 문구
+  return '잠시 문제가 생겼어요. 다시 시도해주세요. 계속 안 되면 학생회에 알려주세요.';
+}
+function fail(e, quiet){
+  const t = friendly(e);
+  if (/로그인이 만료/.test(t)) forceLogout(t);
+  else if (!quiet) toast(t, 'err');
+  return t;
+}
+const uiErr = t => Object.assign(new Error(t), { __ui: true });
+
+async function act(btn, msgId, fn){
+  if (btn.disabled) return;
+  btn.disabled = true; msgBox(msgId, '');
+  try { await fn(); } catch (e) { msgBox(msgId, fail(e, true)); }
+  finally { btn.disabled = false; }
+}
+
+function forceLogout(msg){
+  if (!me && view === 'login') return;
+  loggingOut = true; me = null; stopAdminStuff();
+  sb.auth.signOut().catch(() => {}).finally(() => { loggingOut = false; });
+  mode = 'login'; renderLogin(msg);
+}
 
 /* ---------- 시작 ---------- */
-async function boot(){
-  const { data:{ session } } = await sb.auth.getSession();
-  if (!session) return renderLogin();
-  await loadMe();
-  if (!me) { await sb.auth.signOut(); return renderLogin(); }
-  await loadHome();
-  handleClaimHash();
+function fatal(msg){
+  $app.innerHTML = `<h1>${esc(TITLE)}</h1><div class="card"><div class="msg err">${esc(msg)}</div><button onclick="location.reload()">새로고침</button></div>`;
 }
-window.addEventListener('hashchange', () => { if (me) handleClaimHash(); });
-
+async function boot(){
+  if (!window.supabase) return fatal('필요한 구성요소를 불러오지 못했어요.\n인터넷 연결을 확인한 뒤 새로고침해주세요. 학교 와이파이에서 안 되면 휴대폰 데이터로 접속해보세요.');
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true } });
+  sb.auth.onAuthStateChange(ev => { if (ev === 'SIGNED_OUT' && me && !loggingOut) forceLogout('로그인이 만료됐어요. 다시 로그인해주세요.'); });
+  readHash();
+  const s = await call(() => sb.auth.getSession(), { retries: 2 });
+  if (s.error) return fatal(friendly(s.error));
+  if (!s.data.session) return renderLogin();
+  await loadMe();
+  if (!me) { await sb.auth.signOut().catch(() => {}); return renderLogin('계정 정보를 불러오지 못했어요. 다시 로그인해주세요.'); }
+  await loadHome(); processPending();
+}
 async function loadMe(){
-  const { data } = await sb.from('profiles').select('*').maybeSingle();
-  me = data;
+  const r = await call(() => sb.from('profiles').select('*').maybeSingle());
+  me = r.error ? null : r.data;
+}
+
+/* ---------- QR 링크 처리 (로그인 전에 찍어도 로그인 후 자동 처리) ---------- */
+function readHash(){
+  const m = location.hash.match(/#claim=(\d{1,3})\.([0-9a-f]{8})/i);
+  if (m) { ssSet('pending', JSON.stringify({ b: +m[1], t: m[2].toLowerCase(), at: Date.now() })); history.replaceState(null, '', location.pathname + location.search); }
+}
+function takePending(){
+  const raw = ssGet('pending'); if (!raw) return null; ssSet('pending', null);
+  try { const p = JSON.parse(raw); return Date.now() - p.at < 30 * 60 * 1000 ? p : null; } catch { return null; }
+}
+window.addEventListener('hashchange', () => { readHash(); if (me) { if (view !== 'home') loadHome(); processPending(); } });
+
+async function processPending(){
+  if (!me || claiming) return;
+  const p = takePending(); if (!p) return;
+  claiming = true;
+  try {
+    if (view !== 'home') await loadHome();
+    const had = myStamps.has(p.b);
+    if (had) { toast('이미 받은 스탬프예요.', 'info'); return; }
+    const err = await claim(p.b, p.t);
+    if (err) await dialog({ title: '스탬프를 받지 못했어요', body: err });
+  } finally { claiming = false; }
 }
 
 /* ---------- 로그인 / 가입 ---------- */
-function renderLogin(msg){
-  const first = mode === 'signup';
+function renderLogin(msg, vals = {}){
+  view = 'login'; stopAdminStuff();
+  const first = mode === 'signup', hasPending = !!ssGet('pending');
   $app.innerHTML = `
-    <h1>${esc(FESTIVAL_NAME)}</h1>
-    <p class="muted" style="margin-top:8px">부스 5곳에서 스탬프를 모으면 경품 추첨에 참여할 수 있어요.</p>
+    <svg class="crest" viewBox="-50 -50 100 100"><use href="#sf"/></svg>
+    <h1>남부고 청원제<br>스탬프 랠리</h1>
+    <p class="muted" style="text-align:center;margin-top:10px">부스 ${BOOTH_TEXT}에서 눈꽃 스탬프를 모으고<br>경품 추첨에 도전하세요!</p>
     <div class="card">
-      <div class="seg" role="tablist">
-        <button class="${first?'':'on'}" data-m="login">로그인</button>
-        <button class="${first?'on':''}" data-m="signup">처음이에요</button>
-      </div>
-      <label for="sid">학번</label>
-      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="username" placeholder="예: 10101">
+      ${hasPending ? '<div class="msg info" style="margin-top:0">QR로 오셨네요! 로그인하면 스탬프가 바로 찍혀요.</div>' : ''}
+      <div class="seg" role="tablist"><button class="${first ? '' : 'on'}" data-m="login">로그인</button><button class="${first ? 'on' : ''}" data-m="signup">처음이에요</button></div>
+      <label for="sid">학번 (숫자 5자리)</label>
+      <input id="sid" inputmode="numeric" maxlength="5" autocomplete="username" placeholder="예: 10101" value="${esc(vals.sid || '')}">
       <label for="nm">이름</label>
-      <input id="nm" autocomplete="name" placeholder="홍길동">
-      <label for="pw">${first?'사용할 비밀번호 (4자리 이상)':'비밀번호'}</label>
-      <input id="pw" type="password" autocomplete="${first?'new-password':'current-password'}" placeholder="${first?'잊지 않을 비밀번호':'비밀번호'}">
-      ${first?`<label for="pw2">비밀번호 확인</label><input id="pw2" type="password" autocomplete="new-password">`:''}
-      <div id="msg">${msg?`<div class="msg err">${esc(msg)}</div>`:''}</div>
-      <button id="go">${first?'비밀번호 설정하고 시작':'로그인'}</button>
+      <input id="nm" autocomplete="name" placeholder="홍길동" value="${esc(vals.nm || '')}">
+      <label for="pw">${first ? '사용할 비밀번호 (4자리 이상)' : '비밀번호'}</label>
+      <input id="pw" type="password" autocomplete="${first ? 'new-password' : 'current-password'}" placeholder="${first ? '잊지 않을 비밀번호' : '비밀번호'}">
+      ${first ? '<label for="pw2">비밀번호 확인</label><input id="pw2" type="password" autocomplete="new-password">' : ''}
+      <label class="chk"><input type="checkbox" id="showpw"> 비밀번호 보기</label>
+      <div id="msg">${msg ? `<div class="msg err">${esc(msg)}</div>` : ''}</div>
+      <button id="go">${first ? '비밀번호 설정하고 시작' : '로그인'}</button>
     </div>
-    <p class="muted" style="margin-top:14px">비밀번호를 잊었다면 학생회 부스에서 초기화해드려요.</p>`;
-  $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.m; renderLogin(); });
+    <p class="muted" style="margin-top:14px;text-align:center">비밀번호를 잊었다면 학생회 부스에서 초기화해드려요.</p>`;
+  const vs = () => ({ sid: document.getElementById('sid').value, nm: document.getElementById('nm').value });
+  $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { mode = b.dataset.m; renderLogin('', vs()); });
+  document.getElementById('showpw').onchange = e => $app.querySelectorAll('input[type=password],input[data-pw]').forEach(i => { i.type = e.target.checked ? 'text' : 'password'; i.dataset.pw = 1; });
   document.getElementById('go').onclick = submitLogin;
-  $app.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => e.key==='Enter' && submitLogin()));
+  $app.querySelectorAll('input').forEach(i => i.addEventListener('keydown', e => e.key === 'Enter' && submitLogin()));
 }
 
+const norm = s => String(s || '').normalize('NFC').replace(/\s/g, '');
+
 async function submitLogin(){
-  const sid = document.getElementById('sid').value.trim();
-  const nm  = document.getElementById('nm').value.trim();
-  const pw  = document.getElementById('pw').value;
-  const say = t => document.getElementById('msg').innerHTML = `<div class="msg err">${esc(t)}</div>`;
+  if (busy) return;
+  const sid = document.getElementById('sid').value.trim(), nm = document.getElementById('nm').value.trim(), pw = document.getElementById('pw').value;
+  const say = t => msgBox('msg', t);
   if (!/^\d{5}$/.test(sid)) return say('학번은 숫자 5자리로 입력해주세요. (예: 10101)');
   if (!nm) return say('이름을 입력해주세요.');
   if (pw.length < 4) return say('비밀번호는 4자리 이상이어야 해요.');
-  const btn = document.getElementById('go'); btn.disabled = true;
-
-  if (mode === 'signup') {
-    if (pw !== document.getElementById('pw2').value) { btn.disabled=false; return say('비밀번호 확인이 달라요.'); }
-    const { error } = await sb.auth.signUp({ email: toEmail(sid), password: pw + PW_SUFFIX,
-      options:{ data:{ student_id: sid, name: nm } } });
-    if (error) { btn.disabled=false; return say(/already|registered/i.test(error.message) ? '이미 가입된 학번이에요. "로그인"을 눌러주세요.' : error.message); }
-  }
-  const { error } = await sb.auth.signInWithPassword({ email: toEmail(sid), password: pw + PW_SUFFIX });
-  if (error) { btn.disabled=false; return say('학번 또는 비밀번호가 맞지 않아요.'); }
-
-  await loadMe();
-  if (!me || me.name.replace(/\s/g,'') !== nm.replace(/\s/g,'')) {       // 이름 대조
-    await sb.auth.signOut(); me = null; btn.disabled=false;
-    return say('학번과 이름이 일치하지 않아요.');
-  }
-  await loadHome(); handleClaimHash();
+  const signup = mode === 'signup';
+  if (signup && pw !== document.getElementById('pw2').value) return say('비밀번호 확인이 달라요. 같은 비밀번호를 두 번 입력해주세요.');
+  const btn = document.getElementById('go'); busy = true; btn.disabled = true; say('');
+  const vals = { sid, nm };
+  try {
+    let session = null;
+    if (signup) {
+      const r = await call(() => sb.auth.signUp({ email: toEmail(sid), password: pw + PW_SUFFIX, options: { data: { student_id: sid, name: nm } } }), { retries: 0 });
+      if (r.error) {
+        const t = friendly(r.error);
+        if (/이미 가입된 학번/.test(t)) { mode = 'login'; return renderLogin(t + '\n(가입할 때 정한 비밀번호를 입력하세요)', vals); }
+        return say(t);
+      }
+      session = r.data && r.data.session;
+    }
+    if (!session) {
+      const r = await call(() => sb.auth.signInWithPassword({ email: toEmail(sid), password: pw + PW_SUFFIX }));
+      if (r.error) return say(friendly(r.error));
+    }
+    await loadMe();
+    if (!me) { await sb.auth.signOut().catch(() => {}); return say('계정 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.'); }
+    if (norm(me.name) !== norm(nm)) {
+      await sb.auth.signOut().catch(() => {}); me = null;
+      return say('학번과 이름이 일치하지 않아요.\n가입할 때 입력한 이름으로 적어주세요. 이름을 잘못 적고 가입했다면 학생회에 수정을 요청해주세요.');
+    }
+    await loadHome(); processPending();
+  } catch (e) { say(fail(e, true)); }
+  finally { busy = false; const b = document.getElementById('go'); if (b) b.disabled = false; }
 }
 
 /* ---------- 학생 홈 ---------- */
-async function loadHome(justGot){
-  const [b, s] = await Promise.all([ sb.rpc('list_booths'), sb.from('stamps').select('booth_id') ]);
-  booths = b.data || [];
-  myStamps = new Set((s.data||[]).map(r => r.booth_id));
+async function loadHome(justGot, silent){
+  const [b, s] = await Promise.all([ rpc('list_booths'), call(() => sb.from('stamps').select('booth_id')) ]);
+  if (b.error || s.error) {
+    const t = fail(b.error || s.error, true);
+    if (/로그인이 만료/.test(t)) return;
+    if (silent && view === 'home') return;
+    return renderHomeError(t);
+  }
+  booths = b.data || []; myStamps = new Set((s.data || []).map(r => r.booth_id));
   renderHome(justGot);
+}
+function renderHomeError(t){
+  view = 'home';
+  $app.innerHTML = `<h1>${esc(TITLE)}</h1><div class="card"><div class="msg err">${esc(t)}</div>
+    <button id="rt">다시 시도</button><button id="lo" class="ghost">로그아웃</button></div>`;
+  document.getElementById('rt').onclick = () => loadHome(); document.getElementById('lo').onclick = logout;
 }
 
 function renderHome(justGot){
-  const total = booths.length, got = myStamps.size, full = got >= total && total > 0;
+  view = 'home'; stopAdminStuff();
+  const total = booths.length, got = myStamps.size, full = total > 0 && got >= total;
   $app.innerHTML = `
-    <div class="row"><div><h2>${esc(me.name)}</h2><p class="muted">${esc(me.student_id)}</p></div>
-      <div style="display:flex;gap:8px">
-        ${me.is_admin?'<button class="small ghost" id="toAdmin">관리자</button>':''}
-        <button class="small ghost" id="out">로그아웃</button></div></div>
+    <div class="row"><div><h2>${esc(me.name)}${me.is_super ? '<span class="badge">최고관리자</span>' : me.is_admin ? '<span class="badge">관리자</span>' : ''}</h2><p class="muted">${esc(me.student_id)}</p></div>
+      <div class="actions">${me.is_admin ? '<button class="small ghost" id="toAdmin">관리자</button>' : ''}<button class="small ghost" id="rf" aria-label="새로고침">↻</button><button class="small ghost" id="out">로그아웃</button></div></div>
     <div class="ticket">
-      <div class="row"><h2>스탬프 카드</h2><b>${got} / ${total}</b></div>
-      <div class="bar"><i style="width:${total?got/total*100:0}%"></i></div>
-      <div class="grid">${booths.map(b => {
-        const has = myStamps.has(b.id);
-        return `<div class="slot ${has?'got':''} ${justGot===b.id?'pop':''}">${has?`<b>✓</b>${esc(b.name)}`:esc(b.name)}</div>`; }).join('')}</div>
+      <div class="row"><h2>눈꽃 스탬프 카드</h2><b style="font-size:18px">${got} / ${total}</b></div>
+      <div class="bar"><i style="width:${total ? got / total * 100 : 0}%"></i></div>
+      <div class="slots">${booths.map(b => { const has = myStamps.has(b.id);
+        return `<div class="slot ${has ? 'got' : ''} ${justGot === b.id ? 'pop' : ''}">${SF}${esc(b.name)}</div>`; }).join('')}</div>
     </div>
-    ${full ? `<div class="done">🎉 추첨 응모 완료!<br><span style="font-family:var(--body);font-size:14px;font-weight:600">경품 추첨 시간에 이 화면을 보여주세요</span></div>`
-          : `<p class="muted" style="margin-top:16px">부스에 있는 QR을 휴대폰 카메라로 찍으면 스탬프가 찍혀요.</p>`}
+    ${full ? `<div class="done">❄ 추첨 응모 완료! ❄<small>경품 추첨 때 이 화면을 보여주세요</small></div>`
+           : `<button id="scanbtn" style="margin-top:18px;font-size:19px;padding:17px">📷 QR 스캔하기</button>
+              <p class="muted" style="margin-top:10px;text-align:center">부스의 QR을 비추면 스탬프가 찍혀요.<br>(휴대폰 카메라 앱으로 찍어도 돼요)</p>`}
     <div class="card"><h2 style="font-size:18px">QR이 안 찍힐 때</h2>
-      <label for="cb">부스</label>
-      <select id="cb">${booths.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>
+      <label for="cb">부스</label><select id="cb">${booths.map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>
       <label for="cc">부스에 표시된 8자리 코드</label>
       <input id="cc" autocapitalize="off" autocomplete="off" maxlength="8" placeholder="예: 3fa91c0b">
-      <div id="cmsg"></div>
-      <button id="cgo" class="ghost">코드로 스탬프 받기</button></div>
+      <div id="cmsg"></div><button id="cgo" class="ghost">코드로 스탬프 받기</button></div>
     <div class="card"><h2 style="font-size:18px">비밀번호 바꾸기</h2>
-      <label for="op">현재 비밀번호</label>
-      <input id="op" type="password" autocomplete="current-password">
-      <label for="np">새 비밀번호 (4자리 이상)</label>
-      <input id="np" type="password" autocomplete="new-password">
-      <label for="np2">새 비밀번호 확인</label>
-      <input id="np2" type="password" autocomplete="new-password">
-      <div id="pmsg"></div>
-      <button id="pgo" class="ghost">비밀번호 변경</button></div>`;
+      <label for="op">현재 비밀번호</label><input id="op" type="password" autocomplete="current-password">
+      <label for="np">새 비밀번호 (4자리 이상)</label><input id="np" type="password" autocomplete="new-password">
+      <label for="np2">새 비밀번호 확인</label><input id="np2" type="password" autocomplete="new-password">
+      <div id="pmsg"></div><button id="pgo" class="ghost">비밀번호 변경</button></div>`;
   document.getElementById('out').onclick = logout;
-  if (me.is_admin) document.getElementById('toAdmin').onclick = renderAdmin;
-  document.getElementById('pgo').onclick = changePassword;
-  document.getElementById('cgo').onclick = async () => {
-    const r = await claim(+document.getElementById('cb').value, document.getElementById('cc').value.trim().toLowerCase());
-    if (r) document.getElementById('cmsg').innerHTML = `<div class="msg err">${esc(r)}</div>`;
-  };
-}
-
-async function changePassword(){
-  const say = (t, ok) => document.getElementById('pmsg').innerHTML = `<div class="msg ${ok?'ok':'err'}">${esc(t)}</div>`;
-  const op = document.getElementById('op').value;
-  const np = document.getElementById('np').value;
-  if (!op) return say('현재 비밀번호를 입력해주세요.');
-  if (np.length < 4) return say('새 비밀번호는 4자리 이상이어야 해요.');
-  if (np !== document.getElementById('np2').value) return say('새 비밀번호 확인이 달라요.');
-  const btn = document.getElementById('pgo'); btn.disabled = true;
-  const chk = await sb.auth.signInWithPassword({ email: toEmail(me.student_id), password: op + PW_SUFFIX });
-  if (chk.error) { btn.disabled = false; return say('현재 비밀번호가 맞지 않아요.'); }
-  const { error } = await sb.auth.updateUser({ password: np + PW_SUFFIX });
-  btn.disabled = false;
-  if (error) return say('변경하지 못했어요. 잠시 후 다시 시도해주세요.');
-  ['op','np','np2'].forEach(id => document.getElementById(id).value = '');
-  say('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요.', true);
+  const sbn = document.getElementById('scanbtn'); if (sbn) sbn.onclick = openScanner;
+  document.getElementById('rf').onclick = async e => { e.target.disabled = true; await loadHome(); toast('새로고침했어요.', 'ok', 1500); };
+  if (me.is_admin) document.getElementById('toAdmin').onclick = () => renderAdmin();
+  document.getElementById('cgo').onclick = e => act(e.target, 'cmsg', async () => {
+    const t = document.getElementById('cc').value.trim().toLowerCase();
+    if (!/^[0-9a-f]{8}$/.test(t)) throw uiErr('8자리 코드를 정확히 입력해주세요. (숫자와 a~f 영문자)');
+    const b = +document.getElementById('cb').value;
+    if (myStamps.has(b)) throw uiErr('이미 받은 스탬프예요.');
+    const err = await claim(b, t); if (err) throw uiErr(err);
+  });
+  document.getElementById('pgo').onclick = e => act(e.target, 'pmsg', changePassword);
 }
 
 async function claim(b, t){
-  const { error } = await sb.rpc('claim_stamp', { b, t });
-  if (error) return errText(error);
+  if (!booths.some(x => x.id === b)) return '존재하지 않는 부스예요. 부스의 QR을 다시 확인해주세요.';
+  const r = await rpc('claim_stamp', { b, t });
+  if (r.error) return friendly(r.error);
   await loadHome(b);
+  window.scrollTo(0, 0);
+  toast('❄ 스탬프를 받았어요!', 'ok');
+  if (myStamps.size >= booths.length) dialog({ title: '❄ 모든 스탬프를 모았어요!', body: '경품 추첨 응모가 완료됐어요.\n추첨 시간에 이 화면을 보여주세요.' });
   return null;
 }
 
-async function handleClaimHash(){
-  const m = location.hash.match(/^#claim=(\d+)\.([0-9a-f]+)$/i);
-  if (!m) return;
-  history.replaceState(null, '', location.pathname + location.search);
-  const b = +m[1], had = myStamps.has(b);
-  const err = await claim(b, m[2].toLowerCase());
-  if (err) { alert(err); return; }
-  if (had) alert('이미 받은 스탬프예요.');
+/* ---------- 앱 안 QR 스캔 ---------- */
+let scanner = null;
+function closeScanner(){
+  if (scanner) { scanner.stop(); scanner = null; }
+  const w = document.getElementById('modal'); if (w.querySelector('.scan')) w.innerHTML = '';
+}
+const IN_APP = /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\//i.test(navigator.userAgent);
+async function openScanner(){
+  if (scanner) return;
+  const alt = '\n\n대신 휴대폰 카메라 앱으로 QR을 찍거나, "QR이 안 찍힐 때"에 8자리 코드를 입력해주세요.';
+  if (!window.jsQR) return dialog({ title: '스캔 기능을 불러오지 못했어요', body: '인터넷 연결을 확인하고 새로고침해보세요.' + alt });
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia)
+    return dialog({ title: '이 화면에서는 카메라를 쓸 수 없어요', body: (IN_APP ? '카카오톡 같은 앱 안에서는 카메라가 막혀요. 크롬이나 사파리로 열어주세요.' : '이 브라우저는 앱 안 스캔을 지원하지 않아요.') + alt });
+
+  const w = document.getElementById('modal');
+  w.innerHTML = `<div class="scrim scan"><div class="scanbox"><video id="sv" playsinline muted></video><div class="frame"></div></div>
+    <p class="scanhint" id="sh">QR을 네모 안에 맞춰주세요</p><button class="ghost" id="sx">닫기</button></div>`;
+  document.getElementById('sx').onclick = closeScanner;
+  const video = document.getElementById('sv'); let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+  } catch (e) {
+    closeScanner();
+    const n = e && e.name;
+    const why = (n === 'NotAllowedError' || n === 'SecurityError') ? '카메라 사용이 허용되지 않았어요.\n주소창 왼쪽의 자물쇠(또는 설정)에서 카메라를 "허용"으로 바꾼 뒤 다시 눌러주세요.'
+      : n === 'NotFoundError' ? '카메라를 찾지 못했어요.'
+      : n === 'NotReadableError' ? '다른 앱이 카메라를 쓰고 있어요. 그 앱을 닫고 다시 눌러주세요.'
+      : '카메라를 켜지 못했어요.';
+    return dialog({ title: '카메라를 켤 수 없어요', body: why + (IN_APP ? '\n(카카오톡 같은 앱 안에서는 크롬/사파리로 열어야 해요)' : '') + alt });
+  }
+  video.srcObject = stream;
+  try { await video.play(); } catch {}
+  const cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
+  let alive = true, last = 0, lastBad = 0;
+  scanner = { stop(){ alive = false; stream.getTracks().forEach(t => t.stop()); } };
+  const tick = ts => {
+    if (!alive) return;
+    if (video.readyState >= 2 && ts - last > 120) {
+      last = ts;
+      const vw = video.videoWidth, vh = video.videoHeight;
+      if (vw && vh) {
+        const k = Math.min(1, 640 / Math.max(vw, vh));
+        cv.width = Math.round(vw * k); cv.height = Math.round(vh * k);
+        ctx.drawImage(video, 0, 0, cv.width, cv.height);
+        const img = ctx.getImageData(0, 0, cv.width, cv.height);
+        const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+        if (code && code.data) {
+          const m = code.data.match(/claim=(\d{1,3})\.([0-9a-f]{8})/i);
+          if (m) { const b = +m[1], t = m[2].toLowerCase(); closeScanner(); handleScanned(b, t); return; }
+          if (ts - lastBad > 2500) { lastBad = ts; const h = document.getElementById('sh'); if (h) h.textContent = '스탬프용 QR이 아니에요.\n부스에 있는 QR을 비춰주세요.'; }
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+async function handleScanned(b, t){
+  if (claiming) return; claiming = true;
+  try {
+    if (myStamps.has(b)) { toast('이미 받은 스탬프예요.', 'info'); return; }
+    const err = await claim(b, t);
+    if (err) await dialog({ title: '스탬프를 받지 못했어요', body: err });
+  } finally { claiming = false; }
 }
 
-async function logout(){ await sb.auth.signOut(); me = null; mode='login'; renderLogin(); }
+async function changePassword(){
+  const op = document.getElementById('op').value, np = document.getElementById('np').value;
+  if (!op) throw uiErr('현재 비밀번호를 입력해주세요.');
+  if (np.length < 4) throw uiErr('새 비밀번호는 4자리 이상이어야 해요.');
+  if (np !== document.getElementById('np2').value) throw uiErr('새 비밀번호 확인이 달라요.');
+  const chk = await call(() => sb.auth.signInWithPassword({ email: toEmail(me.student_id), password: op + PW_SUFFIX }));
+  if (chk.error) throw /invalid login/i.test(chk.error.message || '') ? uiErr('현재 비밀번호가 맞지 않아요.') : chk.error;
+  const r = await call(() => sb.auth.updateUser({ password: np + PW_SUFFIX }));
+  if (r.error) throw r.error;
+  ['op', 'np', 'np2'].forEach(id => document.getElementById(id).value = '');
+  msgBox('pmsg', '비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요.', 'ok');
+}
+
+async function logout(){
+  loggingOut = true; stopAdminStuff();
+  await sb.auth.signOut().catch(() => {}); me = null; loggingOut = false; mode = 'login'; renderLogin();
+}
 
 /* ---------- 관리자 ---------- */
+function stopAdminStuff(){
+  clearInterval(qrTimer); qrTimer = null;
+  if (wake) { wake.release().catch(() => {}); wake = null; }
+}
+async function keepAwake(){ try { if (navigator.wakeLock && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch {} }
+
 function renderAdmin(){
-  clearInterval(qrTimer);
+  if (!me || !me.is_admin) return loadHome();
+  view = 'admin'; stopAdminStuff();
+  const tabs = [['qr', 'QR'], ['grant', '직접 부여'], ['stat', '현황·추첨'], ['manage', '관리']];
   $app.innerHTML = `
-    <div class="row"><h2>관리자</h2><button class="small ghost" id="back">내 카드</button></div>
-    <div class="seg"><button data-t="qr" class="${tab==='qr'?'on':''}">QR</button>
-      <button data-t="grant" class="${tab==='grant'?'on':''}">직접 부여</button>
-      <button data-t="stat" class="${tab==='stat'?'on':''}">현황·추첨</button>
-      <button data-t="reset" class="${tab==='reset'?'on':''}">초기화</button></div>
+    <div class="row"><h2>관리자${me.is_super ? '<span class="badge">최고관리자</span>' : ''}</h2><button class="small ghost" id="back">내 카드</button></div>
+    <div class="seg">${tabs.map(([k, v]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div>
     <div id="pane"></div>`;
-  document.getElementById('back').onclick = () => { clearInterval(qrTimer); loadHome(); };
+  document.getElementById('back').onclick = () => loadHome();
   $app.querySelectorAll('.seg button').forEach(b => b.onclick = () => { tab = b.dataset.t; renderAdmin(); });
-  ({ qr: paneQR, grant: paneGrant, stat: paneStat, reset: paneReset })[tab]();
+  ({ qr: paneQR, grant: paneGrant, stat: paneStat, manage: paneManage })[tab]();
 }
 
-function boothSelect(id){ return `<select id="${id}">${booths.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>`; }
+const boothSelect = (id, sel) => `<select id="${id}">${booths.map(b => `<option value="${b.id}" ${String(b.id) === String(sel) ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select>`;
+const val = id => document.getElementById(id).value.trim();
+async function lookup(sid){
+  if (!/^\d{5}$/.test(sid)) throw uiErr('학번은 숫자 5자리로 입력해주세요.');
+  const r = await rpc('admin_student_info', { sid }); if (r.error) throw r.error; return r.data;
+}
+const who = (i, sid) => `${i.name}(${sid})`;
 
-function paneQR(){
-  document.getElementById('pane').innerHTML = `<div class="card"><label for="ab">우리 부스</label>${boothSelect('ab')}
-    <div id="qr"></div><div class="code" id="acode">--------</div>
-    <p class="muted" style="text-align:center;margin-top:8px">QR은 1분마다 자동으로 바뀌어요. 이 화면을 학생에게 보여주세요.</p></div>`;
-  const draw = async () => {
-    const b = +document.getElementById('ab').value;
-    const { data, error } = await sb.rpc('get_booth_token', { b });
-    if (error) return document.getElementById('acode').textContent = '오류';
-    const url = `${location.origin}${location.pathname}#claim=${b}.${data}`;
-    const box = document.getElementById('qr'); box.innerHTML = '';
-    new QRCode(box, { text: url, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M });
-    document.getElementById('acode').textContent = data;
-  };
-  document.getElementById('ab').onchange = draw;
-  draw(); qrTimer = setInterval(() => { if (document.getElementById('qr')) draw(); else clearInterval(qrTimer); }, 20000);
+async function ensureBooths(){
+  if (booths.length) return true;
+  const r = await rpc('list_booths'); if (r.error) { fail(r.error); return false; }
+  booths = r.data || []; return booths.length > 0;
 }
 
-function paneGrant(){
-  document.getElementById('pane').innerHTML = `<div class="card"><label for="gb">부스</label>${boothSelect('gb')}
-    <label for="gs">학생 학번</label><input id="gs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
-    <div id="gmsg"></div><button id="gg">스탬프 찍어주기</button></div>`;
-  document.getElementById('gg').onclick = async () => {
-    const { data, error } = await sb.rpc('admin_grant_stamp', { sid: document.getElementById('gs').value, b: +document.getElementById('gb').value });
-    document.getElementById('gmsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>` : `<div class="msg ok">${esc(data)} 학생에게 스탬프를 찍었어요.</div>`;
-    if (!error) document.getElementById('gs').value = '';
-  };
-}
-
-function paneReset(){
+/* --- QR 탭 --- */
+async function paneQR(){
   const pane = document.getElementById('pane');
-  pane.innerHTML = `
-    <div class="card"><h2 style="font-size:18px">비밀번호 초기화</h2>
-      <p class="muted" style="margin-top:6px">비밀번호를 잊은 학생의 비밀번호를 <b>1234</b>로 바꿔요. 스탬프 기록은 그대로예요.</p>
-      <label for="rs">학생 학번</label><input id="rs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
-      <div id="rmsg"></div><button id="rg">1234로 초기화</button></div>
-
-    <div class="card"><h2 style="font-size:18px">학생 스탬프 취소</h2>
-      <p class="muted" style="margin-top:6px">잘못 찍힌 스탬프를 한 학생 단위로 지워요.</p>
-      <label for="cs">학생 학번</label><input id="cs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
-      <label for="cb2">지울 스탬프</label>
-      <select id="cb2"><option value="">전부 지우기</option>${booths.map(b=>`<option value="${b.id}">${esc(b.name)}만</option>`).join('')}</select>
-      <div id="smsg"></div><button id="sg" class="ghost">스탬프 지우기</button></div>
-
-    <div class="card"><h2 style="font-size:18px">전체 스탬프 초기화</h2>
-      <p class="muted" style="margin-top:6px">모든 학생의 스탬프를 지워요. <b>되돌릴 수 없어요.</b> 행사 전 리허설 기록을 지울 때만 쓰세요. 학생 계정은 남아요.</p>
-      <label for="ac">확인을 위해 <b>전체초기화</b>라고 입력</label><input id="ac" autocomplete="off">
-      <div id="amsg"></div><button id="ag">전체 스탬프 지우기</button></div>`;
-
-  document.getElementById('rg').onclick = async () => {
-    const sid = document.getElementById('rs').value.trim();
-    if (!/^\d{5}$/.test(sid)) return document.getElementById('rmsg').innerHTML = '<div class="msg err">학번 5자리를 입력해주세요.</div>';
-    const { data, error } = await sb.rpc('admin_reset_password', { sid });
-    document.getElementById('rmsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
-      : `<div class="msg ok">${esc(data)} 학생의 비밀번호를 1234로 바꿨어요. 로그인 후 바로 변경하도록 안내해주세요.</div>`;
-    if (!error) document.getElementById('rs').value = '';
+  if (!(await ensureBooths())) { pane.innerHTML = '<div class="card"><div class="msg err">부스 목록을 불러오지 못했어요.</div><button id="r1">다시 시도</button></div>'; document.getElementById('r1').onclick = paneQR; return; }
+  pane.innerHTML = `<div class="card"><label for="ab">우리 부스</label>${boothSelect('ab', lsGet('myBooth'))}
+    <div id="qr"></div><div class="code" id="acode">--------</div><div id="qmsg"></div>
+    <p class="muted" style="text-align:center;margin-top:10px">QR은 1분마다 자동으로 바뀌어요.<br>이 화면을 학생에게 보여주세요. (화면은 꺼지지 않아요)</p>
+    <button class="ghost" id="qrf">QR 새로고침</button></div>`;
+  keepAwake();
+  const draw = async () => {
+    if (!document.getElementById('qr')) return;
+    const b = +document.getElementById('ab').value; lsSet('myBooth', b);
+    const r = await rpc('get_booth_token', { b });
+    if (r.error) { msgBox('qmsg', friendly(r.error) + '\n(자동으로 다시 시도해요)'); return; }
+    msgBox('qmsg', '');
+    const box = document.getElementById('qr'); box.innerHTML = '';
+    document.getElementById('acode').textContent = r.data;
+    if (window.QRCode) new QRCode(box, { text: `${location.origin}${location.pathname}#claim=${b}.${r.data}`, width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M });
+    else box.innerHTML = '<span style="color:#0b2152;font-weight:700;text-align:center">QR을 만들지 못했어요.<br>아래 8자리 코드를 학생에게 알려주세요.</span>';
   };
-
-  document.getElementById('sg').onclick = async () => {
-    const sid = document.getElementById('cs').value.trim();
-    const bv = document.getElementById('cb2').value;
-    if (!/^\d{5}$/.test(sid)) return document.getElementById('smsg').innerHTML = '<div class="msg err">학번 5자리를 입력해주세요.</div>';
-    if (!confirm(sid + ' 학생의 스탬프를 ' + (bv ? '해당 부스 것만' : '전부') + ' 지울까요?')) return;
-    const { data, error } = await sb.rpc('admin_clear_stamps', { sid, b: bv ? +bv : null });
-    document.getElementById('smsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
-      : `<div class="msg ok">${esc(data)} 학생의 스탬프를 지웠어요.</div>`;
-    if (!error) document.getElementById('cs').value = '';
-  };
-
-  document.getElementById('ag').onclick = async () => {
-    if (document.getElementById('ac').value.trim() !== '전체초기화')
-      return document.getElementById('amsg').innerHTML = '<div class="msg err">확인 칸에 전체초기화 라고 입력해주세요.</div>';
-    if (!confirm('정말 모든 학생의 스탬프를 지울까요? 되돌릴 수 없어요.')) return;
-    const { data, error } = await sb.rpc('admin_clear_all_stamps');
-    document.getElementById('amsg').innerHTML = error ? `<div class="msg err">${esc(errText(error))}</div>`
-      : `<div class="msg ok">스탬프 ${data}개를 모두 지웠어요.</div>`;
-    if (!error) document.getElementById('ac').value = '';
-  };
+  document.getElementById('ab').onchange = draw; document.getElementById('qrf').onclick = draw;
+  draw(); qrTimer = setInterval(draw, 20000);
 }
 
+/* --- 직접 부여 탭 --- */
+async function paneGrant(){
+  const pane = document.getElementById('pane');
+  if (!(await ensureBooths())) { pane.innerHTML = '<div class="card"><div class="msg err">부스 목록을 불러오지 못했어요.</div><button id="r1">다시 시도</button></div>'; document.getElementById('r1').onclick = paneGrant; return; }
+  pane.innerHTML = `<div class="card"><label for="gb">부스</label>${boothSelect('gb', lsGet('myBooth'))}
+    <label for="gs">학생 학번</label><input id="gs" inputmode="numeric" maxlength="5" placeholder="예: 10101">
+    <div id="ginfo"></div><div id="gmsg"></div><button id="gg">스탬프 찍어주기</button></div>`;
+  let seq = 0;
+  document.getElementById('gs').oninput = async () => {
+    const sid = val('gs'), n = ++seq; msgBox('ginfo', '');
+    if (!/^\d{5}$/.test(sid)) return;
+    try { const i = await lookup(sid); if (n !== seq) return;
+      document.getElementById('ginfo').innerHTML = `<div class="msg info">${esc(i.name)} · 받은 스탬프 ${i.stamps.length}개${i.stamps.length ? ' (' + i.stamps.map(x => esc((booths.find(b => b.id === x) || {}).name || x)).join(', ') + ')' : ''}</div>`;
+    } catch (e) { if (n === seq) msgBox('ginfo', friendly(e)); }
+  };
+  document.getElementById('gg').onclick = e => act(e.target, 'gmsg', async () => {
+    const sid = val('gs'), b = +document.getElementById('gb').value, i = await lookup(sid);
+    if (i.stamps.includes(b)) throw uiErr(`${who(i, sid)} 학생은 이미 이 부스 스탬프를 받았어요.`);
+    const r = await rpc('admin_grant_stamp', { sid, b }); if (r.error) throw r.error;
+    msgBox('gmsg', `${r.data} 학생에게 스탬프를 찍었어요.`, 'ok'); toast('스탬프를 찍었어요.', 'ok', 1800);
+    document.getElementById('gs').value = ''; msgBox('ginfo', '');
+  });
+}
+
+/* --- 현황 · 추첨 탭 --- */
 async function paneStat(){
   const pane = document.getElementById('pane');
   pane.innerHTML = '<div class="card muted">불러오는 중…</div>';
-  const { data, error } = await sb.rpc('admin_stats');
-  if (error) return pane.innerHTML = `<div class="msg err">${esc(errText(error))}</div>`;
-  pane.innerHTML = `<div class="card"><div class="stat"><span>가입 학생</span><b>${data.students}명</b></div>
-    ${data.booths.map(b=>`<div class="stat"><span>${esc(b.name)}</span><b>${b.count}명</b></div>`).join('')}
-    <div class="stat"><span>응모 자격 (전부 완료)</span><b>${data.completed}명</b></div>
-    <button class="ghost" id="rf">새로고침</button></div>
-    <div class="card"><h2 style="font-size:18px">경품 추첨</h2>
-    <label for="dn">뽑을 인원</label><input id="dn" type="number" min="1" value="1">
-    <button id="dg">추첨하기</button><div id="dr"></div></div>`;
-  document.getElementById('rf').onclick = paneStat;
-  document.getElementById('dg').onclick = async () => {
-    const { data: w, error: e } = await sb.rpc('admin_draw', { n: +document.getElementById('dn').value });
-    document.getElementById('dr').innerHTML = e ? `<div class="msg err">${esc(errText(e))}</div>`
-      : (w.length ? w.map(x=>`<div class="winner">${esc(x.student_id)} · ${esc(x.name)}</div>`).join('') : '<div class="msg err">응모 자격자가 없어요.</div>');
-  };
+  const r = await rpc('admin_stats');
+  if (r.error) { pane.innerHTML = `<div class="card"><div class="msg err">${esc(friendly(r.error))}</div><button id="r1">다시 시도</button></div>`; document.getElementById('r1').onclick = paneStat; return; }
+  const d = r.data;
+  pane.innerHTML = `<div class="card"><div class="stat"><span>가입 학생</span><b>${d.students}명</b></div>
+    ${d.booths.map(b => `<div class="stat"><span>${esc(b.name)}</span><b>${b.count}명</b></div>`).join('')}
+    <div class="stat"><span>응모 자격 (전부 완료)</span><b>${d.completed}명</b></div>
+    <button class="ghost" id="rf2">새로고침</button></div>
+    <div class="card"><h2 style="font-size:18px">경품 추첨</h2><p class="muted" style="margin-top:6px">전부 모은 학생 중에서 무작위로 뽑아요. (학생회 계정 제외)</p>
+    <label for="dn">뽑을 인원</label><input id="dn" type="number" min="1" max="100" value="1">
+    <div id="dm"></div><button id="dg">추첨하기</button><div id="dr"></div></div>`;
+  document.getElementById('rf2').onclick = paneStat;
+  document.getElementById('dg').onclick = e => act(e.target, 'dm', async () => {
+    const n = Math.max(1, Math.min(100, parseInt(val('dn')) || 1));
+    const w = await rpc('admin_draw', { n }); if (w.error) throw w.error;
+    document.getElementById('dr').innerHTML = w.data.length ? w.data.map(x => `<div class="winner">🎉 ${esc(x.student_id)} · ${esc(x.name)}</div>`).join('') : '<div class="msg err">응모 자격자가 없어요.</div>';
+  });
 }
+
+/* --- 관리 탭 --- */
+async function paneManage(){
+  const pane = document.getElementById('pane'), S = me.is_super;
+  await ensureBooths();
+  const field = (id, label, extra = '') => `<label for="${id}">${label}</label><input id="${id}" ${extra}>`;
+  const sidF = id => field(id, '학생 학번', 'inputmode="numeric" maxlength="5" placeholder="예: 10101"');
+  pane.innerHTML = `
+    <div class="card"><h2 style="font-size:18px">비밀번호 초기화</h2>
+      <p class="muted" style="margin-top:6px">비밀번호를 잊은 학생의 비밀번호를 <b>${TEMP_PW}</b>로 바꿔요. 스탬프는 그대로예요.</p>
+      ${sidF('rs')}<div id="rmsg"></div><button id="rg">${TEMP_PW}으로 초기화</button></div>
+    <div class="card"><h2 style="font-size:18px">학생 스탬프 취소</h2>
+      <p class="muted" style="margin-top:6px">잘못 찍힌 스탬프를 지워요.</p>${sidF('cs')}
+      <label for="cb2">지울 스탬프</label><select id="cb2"><option value="">전부 지우기</option>${booths.map(b => `<option value="${b.id}">${esc(b.name)}만</option>`).join('')}</select>
+      <div id="smsg"></div><button id="sg" class="ghost">스탬프 지우기</button></div>
+    <div class="card"><h2 style="font-size:18px">학생 이름 수정</h2>
+      <p class="muted" style="margin-top:6px">가입할 때 이름을 잘못 적은 학생을 고쳐줘요.</p>${sidF('ns')}${field('nn', '올바른 이름', 'placeholder="홍길동"')}
+      <div id="nmsg"></div><button id="ng" class="ghost">이름 수정</button></div>
+    ${S ? `
+    <div class="card"><h2 style="font-size:18px">관리자 권한 관리 <span class="badge">최고관리자</span></h2>
+      <p class="muted" style="margin-top:6px">먼저 그 학생이 앱에 가입해 있어야 해요. 지정 후 그 학생이 다시 로그인하면 관리자 버튼이 생겨요.</p>
+      ${sidF('as')}<div id="amsg"></div>
+      <div class="dbtn"><button id="a1">관리자로 지정</button><button id="a0" class="ghost">관리자 해제</button></div>
+      <div id="alist" style="margin-top:14px"></div></div>
+    <div class="card"><h2 style="font-size:18px">부스 이름 변경 <span class="badge">최고관리자</span></h2>
+      <label for="bb">부스</label>${boothSelect('bb')}${field('bn', '새 이름', 'maxlength="20" placeholder="예: 떡볶이 부스"')}
+      <div id="bmsg"></div><button id="bg" class="ghost">이름 변경</button></div>
+    <div class="card"><h2 style="font-size:18px">학생 계정 삭제 <span class="badge">최고관리자</span></h2>
+      <p class="muted" style="margin-top:6px">테스트 계정이나 잘못 만든 계정을 지워요. 스탬프 기록도 함께 사라져요.</p>${sidF('ds')}
+      <div id="dmsg"></div><button id="dg2" class="danger">계정 삭제</button></div>
+    <div class="card"><h2 style="font-size:18px">전체 스탬프 초기화 <span class="badge">최고관리자</span></h2>
+      <p class="muted" style="margin-top:6px">모든 학생의 스탬프를 지워요. <b>되돌릴 수 없어요.</b> 행사 전 리허설 기록을 지울 때만 쓰세요.</p>
+      ${field('ac', '확인을 위해 <b>전체초기화</b>라고 입력', 'autocomplete="off"')}<div id="zmsg"></div><button id="zg" class="danger">전체 스탬프 지우기</button></div>` : ''}`;
+
+  const on = (id, msg, fn) => document.getElementById(id).onclick = e => act(e.target, msg, fn);
+
+  on('rg', 'rmsg', async () => { const sid = val('rs'), i = await lookup(sid);
+    if (!await dialog({ title: '비밀번호 초기화', body: `${who(i, sid)} 학생의 비밀번호를 ${TEMP_PW}으로 바꿀까요?`, ok: '초기화', cancel: '취소' })) return;
+    const r = await rpc('admin_reset_password', { sid }); if (r.error) throw r.error;
+    msgBox('rmsg', `${r.data} 학생의 비밀번호를 ${TEMP_PW}으로 바꿨어요. 로그인 후 바로 변경하도록 안내해주세요.`, 'ok'); document.getElementById('rs').value = ''; });
+
+  on('sg', 'smsg', async () => { const sid = val('cs'), bv = document.getElementById('cb2').value, i = await lookup(sid);
+    if (!await dialog({ title: '스탬프 취소', body: `${who(i, sid)} 학생의 스탬프를 ${bv ? '해당 부스 것만' : '전부'} 지울까요?`, ok: '지우기', cancel: '취소', danger: true })) return;
+    const r = await rpc('admin_clear_stamps', { sid, b: bv ? +bv : null }); if (r.error) throw r.error;
+    msgBox('smsg', `${r.data} 학생의 스탬프를 지웠어요.`, 'ok'); document.getElementById('cs').value = ''; });
+
+  on('ng', 'nmsg', async () => { const sid = val('ns'), nn = val('nn'); if (!nn) throw uiErr('올바른 이름을 입력해주세요.');
+    const i = await lookup(sid);
+    if (!await dialog({ title: '이름 수정', body: `${who(i, sid)} → ${nn} 으로 바꿀까요?`, ok: '수정', cancel: '취소' })) return;
+    const r = await rpc('admin_set_name', { sid, nm: nn }); if (r.error) throw r.error;
+    msgBox('nmsg', `이름을 ${r.data}(으)로 수정했어요.`, 'ok'); document.getElementById('ns').value = ''; document.getElementById('nn').value = ''; });
+
+  if (!S) return;
+
+  const loadAdmins = async () => {
+    const r = await rpc('admin_list_admins'), el = document.getElementById('alist'); if (!el) return;
+    if (r.error) { el.innerHTML = `<div class="msg err">${esc(friendly(r.error))}</div>`; return; }
+    el.innerHTML = '<p class="muted">현재 관리자</p>' + r.data.map(a => `<div class="who"><span>${esc(a.sid)} · ${esc(a.nm)}${a.is_sup ? '<span class="badge">최고</span>' : ''}</span>${a.is_sup ? '' : `<button class="small ghost" data-sid="${esc(a.sid)}">해제</button>`}</div>`).join('');
+    el.querySelectorAll('button[data-sid]').forEach(b => b.onclick = () => setRole(b.dataset.sid, false, b));
+  };
+  const setRole = async (sid, make, btn) => { const b = btn || document.getElementById(make ? 'a1' : 'a0');
+    await act(b, 'amsg', async () => { const i = await lookup(sid);
+      if (!make && i.is_super) throw uiErr('최고 관리자의 권한은 바꿀 수 없어요.');
+      if (!await dialog({ title: make ? '관리자 지정' : '관리자 해제', body: `${who(i, sid)} 학생을 ${make ? '관리자로 지정' : '관리자에서 해제'}할까요?`, ok: make ? '지정' : '해제', cancel: '취소', danger: !make })) return;
+      const r = await rpc('admin_set_role', { sid, make }); if (r.error) throw r.error;
+      msgBox('amsg', `${r.data} 학생을 ${make ? '관리자로 지정' : '관리자에서 해제'}했어요.`, 'ok'); document.getElementById('as').value = ''; loadAdmins(); }); };
+  document.getElementById('a1').onclick = () => setRole(val('as'), true);
+  document.getElementById('a0').onclick = () => setRole(val('as'), false);
+  loadAdmins();
+
+  on('bg', 'bmsg', async () => { const b = +document.getElementById('bb').value, nn = val('bn'); if (!nn) throw uiErr('새 이름을 입력해주세요.');
+    const r = await rpc('admin_rename_booth', { b, nm: nn }); if (r.error) throw r.error;
+    const t = booths.find(x => x.id === b); if (t) t.name = r.data;
+    msgBox('bmsg', `부스 이름을 "${r.data}"(으)로 바꿨어요.`, 'ok'); document.getElementById('bn').value = ''; });
+
+  on('dg2', 'dmsg', async () => { const sid = val('ds'), i = await lookup(sid);
+    if (i.is_admin) throw uiErr('관리자 계정은 삭제할 수 없어요. 먼저 관리자 권한을 해제해주세요.');
+    if (!await dialog({ title: '계정 삭제', body: `${who(i, sid)} 학생의 계정과 스탬프를 완전히 삭제할까요?\n되돌릴 수 없어요.`, ok: '삭제', cancel: '취소', danger: true })) return;
+    const r = await rpc('admin_delete_student', { sid }); if (r.error) throw r.error;
+    msgBox('dmsg', `${r.data} 학생의 계정을 삭제했어요. 다시 가입할 수 있어요.`, 'ok'); document.getElementById('ds').value = ''; });
+
+  on('zg', 'zmsg', async () => {
+    if (val('ac') !== '전체초기화') throw uiErr('확인 칸에 전체초기화 라고 입력해주세요.');
+    if (!await dialog({ title: '전체 스탬프 초기화', body: '정말 모든 학생의 스탬프를 지울까요?\n되돌릴 수 없어요.', ok: '모두 지우기', cancel: '취소', danger: true })) return;
+    const r = await rpc('admin_clear_all_stamps'); if (r.error) throw r.error;
+    msgBox('zmsg', `스탬프 ${r.data}개를 모두 지웠어요.`, 'ok'); document.getElementById('ac').value = ''; });
+}
+
+/* ---------- 연결 상태 · 안전망 ---------- */
+const netEl = document.getElementById('net');
+window.addEventListener('offline', () => { netEl.style.display = 'block'; });
+window.addEventListener('online',  () => { netEl.style.display = 'none'; toast('다시 연결됐어요.', 'ok', 2000); if (me && view === 'home') loadHome(null, true); });
+if (!navigator.onLine) netEl.style.display = 'block';
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { closeScanner(); return; }
+  if (me && view === 'home') loadHome(null, true);           // 앱으로 돌아오면 스탬프 자동 갱신
+  if (me && view === 'admin' && tab === 'qr') keepAwake();
+});
+
+let lastErrAt = 0;
+const globalErr = () => { if (Date.now() - lastErrAt > 5000) { lastErrAt = Date.now(); toast('잠시 문제가 생겼어요. 계속되면 새로고침해주세요.', 'err'); } };
+window.addEventListener('unhandledrejection', e => { console.error(e.reason); globalErr(); });
+window.addEventListener('error', e => { console.error(e.error || e.message); globalErr(); });
 
 boot();
 </script>
